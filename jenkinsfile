@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+    environment {
+        AWS_REGION = 'us-east-1'
+        ECR_REPO = 'ecr.us-east-1.amazonaws.com/my-java-react-app'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    dockerImage = docker.build()
+                }
+            }
+        }
+
+        stage('Login to AWS ECR') {
+            steps {
+                script {
+                    sh """
+                    aws ecr get-login-password --region $AWS_REGION | \
+                    docker login --username AWS --password-stdin $ECR_REPO
+                    """
+                }
+            }
+        }
+
+        stage('Push Image to ECR') {
+            steps {
+                script {
+                    dockerImage.push()
+                }
+            }
+        }
+    }
+
+}
